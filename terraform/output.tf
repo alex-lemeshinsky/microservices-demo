@@ -21,3 +21,8 @@ output "cluster_name" {
   description = "Name of the cluster"
   value       = resource.google_container_cluster.my_cluster.name
 }
+
+output "deployment_namespaces" {
+  description = "Kubernetes namespaces where the application is deployed"
+  value       = keys(resource.null_resource.apply_deployment)
+}

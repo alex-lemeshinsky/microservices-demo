@@ -20,8 +20,9 @@ locals {
     "cloudtrace.googleapis.com",
     "cloudprofiler.googleapis.com"
   ]
-  memorystore_apis = ["redis.googleapis.com"]
-  cluster_name     = google_container_cluster.my_cluster.name
+  memorystore_apis  = ["redis.googleapis.com"]
+  cluster_name      = google_container_cluster.my_cluster.name
+  target_namespaces = length(var.environment_namespaces) > 0 ? var.environment_namespaces : [var.namespace]
 }
 
 # Enable Google Cloud APIs
@@ -42,20 +43,36 @@ resource "google_container_cluster" "my_cluster" {
   name     = var.name
   location = var.region
 
-  # Enable autopilot for this cluster
-  enable_autopilot = true
+  remove_default_node_pool = true
+  initial_node_count       = 1
 
-  # Set an empty ip_allocation_policy to allow autopilot cluster to spin up correctly
+  # Enable VPC-native mode.
   ip_allocation_policy {
   }
 
-  # Avoid setting deletion_protection to false
-  # until you're ready (and certain you want) to destroy the cluster.
-  # deletion_protection = false
+  deletion_protection = false
 
   depends_on = [
     module.enable_google_apis
   ]
+}
+
+resource "google_container_node_pool" "primary_nodes" {
+  name     = "${var.name}-node-pool"
+  location = google_container_cluster.my_cluster.location
+  cluster  = google_container_cluster.my_cluster.name
+
+  node_count = var.node_count
+
+  node_config {
+    machine_type = var.node_machine_type
+    oauth_scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+  }
+
+  management {
+    auto_repair  = true
+    auto_upgrade = true
+  }
 }
 
 # Get credentials for cluster
@@ -69,32 +86,68 @@ module "gcloud" {
   create_cmd_entrypoint = "gcloud"
   # Module does not support explicit dependency
   # Enforce implicit dependency through use of local variable
-  create_cmd_body = "container clusters get-credentials ${local.cluster_name} --zone=${var.region} --project=${var.gcp_project_id}"
+  create_cmd_body = "container clusters get-credentials ${local.cluster_name} --location=${var.region} --project=${var.gcp_project_id}"
+}
+
+# Ensure target namespaces exist
+resource "null_resource" "create_namespaces" {
+  for_each = toset(local.target_namespaces)
+
+  triggers = {
+    cluster_id = google_container_cluster.my_cluster.id
+    namespace  = each.value
+  }
+
+  provisioner "local-exec" {
+    interpreter = ["bash", "-exc"]
+    command     = "kubectl create namespace ${each.value} --dry-run=client -o yaml | kubectl apply -f -"
+  }
+
+  depends_on = [
+    module.gcloud,
+    google_container_node_pool.primary_nodes
+  ]
 }
 
 # Apply YAML kubernetes-manifest configurations
 resource "null_resource" "apply_deployment" {
+  for_each = toset(local.target_namespaces)
+
+  triggers = {
+    cluster_id = google_container_cluster.my_cluster.id
+    namespace  = each.value
+  }
+
   provisioner "local-exec" {
     interpreter = ["bash", "-exc"]
-    command     = "kubectl apply -k ${var.filepath_manifest} -n ${var.namespace}"
+    command     = "kubectl apply -k ${var.filepath_manifest} -n ${each.value}"
   }
 
   depends_on = [
-    module.gcloud
+    null_resource.create_namespaces
   ]
 }
 
 # Wait condition for all Pods to be ready before finishing
 resource "null_resource" "wait_conditions" {
+  for_each = toset(local.target_namespaces)
+
+  triggers = {
+    cluster_id           = google_container_cluster.my_cluster.id
+    apply_deployment_id  = null_resource.apply_deployment[each.key].id
+    deployment_namespace = each.value
+  }
+
   provisioner "local-exec" {
     interpreter = ["bash", "-exc"]
     command     = <<-EOT
-    kubectl wait --for=condition=AVAILABLE apiservice/v1beta1.metrics.k8s.io --timeout=180s
-    kubectl wait --for=condition=ready pods --all -n ${var.namespace} --timeout=280s
+    for deployment in $(kubectl get deployment -n ${each.value} -o name | grep -v "deployment.apps/loadgenerator"); do
+      kubectl rollout status -n ${each.value} "$deployment" --timeout=900s
+    done
     EOT
   }
 
   depends_on = [
-    resource.null_resource.apply_deployment
+    null_resource.apply_deployment
   ]
 }

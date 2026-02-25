@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-gcp_project_id = "<project_id_here>"
+gcp_project_id = "hackathon-test-task-488518"
+region         = "us-central1-a"
 
 memorystore = false
+
+environment_namespaces = ["staging", "production"]
+node_machine_type      = "e2-standard-4"
+node_count             = 1

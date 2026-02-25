@@ -25,14 +25,32 @@ variable "name" {
 
 variable "region" {
   type        = string
-  description = "Region of the new GKE cluster"
+  description = "Location of the new GKE cluster (region for regional, zone for zonal)"
   default     = "us-central1"
+}
+
+variable "node_machine_type" {
+  type        = string
+  description = "Machine type for GKE standard node pool"
+  default     = "e2-standard-4"
+}
+
+variable "node_count" {
+  type        = number
+  description = "Node count for GKE standard node pool"
+  default     = 1
 }
 
 variable "namespace" {
   type        = string
   description = "Kubernetes Namespace in which the Online Boutique resources are to be deployed"
   default     = "default"
+}
+
+variable "environment_namespaces" {
+  type        = list(string)
+  description = "List of Kubernetes namespaces to deploy environments into. If empty, falls back to `namespace`."
+  default     = []
 }
 
 variable "filepath_manifest" {
