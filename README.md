@@ -345,6 +345,10 @@ Successful staging deployment run:
 
 ![GitHub Actions Staging Success](docs/img/github-actions-staging-success-run.png)
 
+Successful production deployment run:
+
+![GitHub Actions Production Success](docs/img/github-actions-production-success-run.png)
+
 Artifact Registry images/tags:
 
 ![Artifact Registry Images](docs/img/artifact-registry-images.png)
