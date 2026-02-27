@@ -17,7 +17,7 @@ This document describes the end-to-end flow used to deploy the Online Boutique m
 - Cluster type: Standard (not Autopilot)
 - Node pool: `online-boutique-node-pool`
   - Machine type: `e2-standard-4`
-  - Node count: `1`
+  - Node count: `2`
 - Namespaces:
   - `staging`
   - `production`
@@ -64,7 +64,7 @@ In `terraform/terraform.tfvars`:
 - `region = "us-central1-a"`
 - `environment_namespaces = ["staging", "production"]`
 - `node_machine_type = "e2-standard-4"`
-- `node_count = 1`
+- `node_count = 2`
 
 ### 4.3 Apply Infrastructure and Deploy Workloads
 

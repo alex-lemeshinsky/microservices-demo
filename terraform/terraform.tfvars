@@ -19,4 +19,4 @@ memorystore = false
 
 environment_namespaces = ["staging", "production"]
 node_machine_type      = "e2-standard-4"
-node_count             = 1
+node_count             = 2
