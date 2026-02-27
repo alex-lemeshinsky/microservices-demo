@@ -5,7 +5,7 @@
 This document describes the end-to-end flow used to deploy the Online Boutique microservices app to Google Kubernetes Engine (GKE) for the test task.
 
 - Cloud provider: GCP
-- Project ID: `hackathon-test-task-488518`
+- Project ID: `flash-aviary-488614-c1`
 - Repository: `microservices-demo`
 - IaC tool: Terraform
 - Environments: `staging`, `production` (separate Kubernetes namespaces)
@@ -53,14 +53,14 @@ Key implementation points:
 ### 4.1 Prerequisites
 
 1. Logged in to GCP account with sufficient permissions.
-2. Billing enabled for project `hackathon-test-task-488518`.
+2. Billing enabled for project `flash-aviary-488614-c1`.
 3. Terraform installed.
 
 ### 4.2 Configure Terraform
 
 In `terraform/terraform.tfvars`:
 
-- `gcp_project_id = "hackathon-test-task-488518"`
+- `gcp_project_id = "flash-aviary-488614-c1"`
 - `region = "us-central1-a"`
 - `environment_namespaces = ["staging", "production"]`
 - `node_machine_type = "e2-standard-4"`
@@ -100,11 +100,16 @@ kubectl get svc -n production frontend-external
 HTTP checks:
 
 ```bash
-curl -I http://<staging-frontend-external-ip>
-curl -I http://<production-frontend-external-ip>
+curl -I http://136.115.249.87
+curl -I http://34.44.4.150
 ```
 
 At deployment time, both frontends returned HTTP `200`.
+
+Current frontend public IPs (latest deployment):
+
+- `staging`: `136.115.249.87`
+- `production`: `34.44.4.150`
 
 ## 5. Issues Encountered and Fixes
 
@@ -173,12 +178,12 @@ This satisfies the task requirement to remove provisioned cloud resources after 
 - [x] Terraform can destroy infrastructure
 - [x] `staging` + `production` namespaces deployed
 - [x] Frontend exposed for both environments
+- [x] CI/CD for 2 microservices (`frontend`, `paymentservice`) with build + push + deploy to `staging` and `production`
 - [x] High-level architecture description included
 - [x] Issues and solutions documented
 
 ### Remaining for full final submission package
 
-- [ ] CI/CD for at least 2 microservices (build + push + deploy to staging/prod)
 - [ ] 2-3 useful monitoring/observability dashboards (reliability + scalability)
 - [ ] Screenshots:
   - [ ] deployed system in cloud
@@ -186,3 +191,71 @@ This satisfies the task requirement to remove provisioned cloud resources after 
   - [ ] dashboards
 - [ ] Recorded end-to-end demo video with voice explanation
 
+## 8. Task 2 - CI/CD for 2 Services (GitHub Actions)
+
+Workflow file:
+
+- `.github/workflows/task2-gke-cicd.yaml`
+
+Implemented services:
+
+- `frontend`
+- `paymentservice`
+
+### 8.1 CI/CD Behavior
+
+1. On push to `main` (changes in `src/frontend` or `src/paymentservice`):
+   - build Docker images for both services
+   - push images to Artifact Registry:
+     - `us-central1-docker.pkg.dev/flash-aviary-488614-c1/online-boutique/frontend:<sha>`
+     - `us-central1-docker.pkg.dev/flash-aviary-488614-c1/online-boutique/paymentservice:<sha>`
+   - deploy both images to `staging` namespace in GKE
+   - wait for rollout success (`kubectl rollout status`)
+2. On manual run (`workflow_dispatch`):
+   - `target_environment=staging` -> deploy to `staging`
+   - `target_environment=production` -> deploy to `production`
+   - production deployment is restricted to runs from `main`
+
+Deployment strategy for both namespaces:
+
+- `kubectl set image` on:
+  - `deployment/frontend` container `server`
+  - `deployment/paymentservice` container `server`
+- then rollout checks for both deployments.
+
+### 8.2 GitHub Configuration Required
+
+Required GitHub secrets:
+
+- `GCP_SA_KEY`: JSON key of `github-actions-cicd@flash-aviary-488614-c1.iam.gserviceaccount.com`
+
+Recommended GitHub environments:
+
+- `staging`
+- `production` (optionally protected with required reviewers for manual approval).
+
+Minimum IAM roles for the service account:
+
+- `roles/artifactregistry.writer` (or `roles/artifactregistry.admin` if allowing repo creation by pipeline)
+- `roles/container.developer` (or `roles/container.admin`)
+
+Authentication note:
+
+- Pipeline authentication uses `google-github-actions/auth` with `credentials_json: ${{ secrets.GCP_SA_KEY }}`.
+
+### 8.3 CI/CD Issues Encountered and Fixes
+
+Issue 1: Artifact Registry repository may not exist in a fresh project.
+
+- Symptom: image push fails with repository not found.
+- Fix: added idempotent repository bootstrap step in workflow (`describe` then `create` when missing).
+
+Issue 2: Deployment update can fail if container names are incorrect.
+
+- Symptom: `kubectl set image` fails when using service name as container name.
+- Fix: used the actual container name `server` from manifests for both deployments.
+
+Issue 3: Unsafe production release path from non-main branches.
+
+- Symptom: manual workflows can be triggered from any selected ref.
+- Fix: production job validates `main` branch before deploying.

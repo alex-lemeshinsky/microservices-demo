@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-gcp_project_id = "hackathon-test-task-488518"
+gcp_project_id = "flash-aviary-488614-c1"
 region         = "us-central1-a"
 
 memorystore = false

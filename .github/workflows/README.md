@@ -40,6 +40,16 @@ Note that this workflow does not update the image tags used in `release/kubernet
 
 This workflow runs when a PR closes, regardless of whether it was merged into main. This workflow deletes the PR-specific GKE namespace in the test cluster.
 
+### Task 2 CI/CD - [task2-gke-cicd.yaml](task2-gke-cicd.yaml)
+
+This workflow implements the DevOps test-task CI/CD requirement for two microservices (`frontend` and `paymentservice`) across `staging` and `production` namespaces in GKE.
+
+1. Builds and pushes both service images to Artifact Registry in project `flash-aviary-488614-c1`.
+2. Automatically deploys to `staging` on `main` pushes.
+3. Supports manual promotion to either `staging` or `production` through `workflow_dispatch`.
+4. Authenticates from GitHub to GCP using Service Account JSON key secret `GCP_SA_KEY`.
+5. Updates deployments using `kubectl set image`, then waits for rollout completion.
+
 ## Appendix - Creating a new Actions runner
 
 Should one of the two self-hosted Github Actions runners (GCE instances) fail, or you want to add more runner capacity, this is how to provision a new runner. Note that you need IAM access to the admin Online Boutique GCP project in order to do this.
