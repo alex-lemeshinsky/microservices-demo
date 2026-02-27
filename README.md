@@ -24,6 +24,8 @@ This document describes the end-to-end flow used to deploy the Online Boutique m
 - Deployment source: `kustomize/` manifests applied per namespace
 - Public access:
   - `frontend-external` LoadBalancer service in each namespace
+- Monitoring:
+  - Cloud Monitoring custom dashboards for reliability, scalability, and workload traffic/health
 
 ## 3. Terraform Changes Made
 
@@ -130,7 +132,7 @@ Current frontend public IPs (latest deployment):
 - Root cause:
   - Autopilot scale decisions + environment quota/capacity conditions caused blocked scheduling.
 - Fix:
-  - Migrated to Standard zonal cluster with explicit fixed node pool (`e2-standard-4`, 1 node).
+  - Migrated to Standard zonal cluster with explicit fixed node pool (`e2-standard-4`, 2 nodes).
 
 ### Issue 3: Cluster replacement blocked by deletion protection
 
@@ -179,12 +181,12 @@ This satisfies the task requirement to remove provisioned cloud resources after 
 - [x] `staging` + `production` namespaces deployed
 - [x] Frontend exposed for both environments
 - [x] CI/CD for 2 microservices (`frontend`, `paymentservice`) with build + push + deploy to `staging` and `production`
+- [x] 2-3 useful monitoring/observability dashboards (reliability + scalability)
 - [x] High-level architecture description included
 - [x] Issues and solutions documented
 
 ### Remaining for full final submission package
 
-- [ ] 2-3 useful monitoring/observability dashboards (reliability + scalability)
 - [ ] Screenshots:
   - [ ] deployed system in cloud
   - [ ] CI/CD setup
@@ -259,3 +261,56 @@ Issue 3: Unsafe production release path from non-main branches.
 
 - Symptom: manual workflows can be triggered from any selected ref.
 - Fix: production job validates `main` branch before deploying.
+
+## 9. Task 3 - Cloud Monitoring Dashboards (Reliability/Scalability)
+
+Implemented dashboard assets:
+
+- `monitoring/dashboards/reliability-dashboard.json`
+- `monitoring/dashboards/scalability-dashboard.json`
+- `monitoring/dashboards/traffic-dashboard.json`
+- `monitoring/deploy_dashboards.sh` (idempotent apply script)
+
+### 9.1 Deployed Dashboards
+
+Project: `flash-aviary-488614-c1`
+
+- `Task3 - Reliability Overview` (`12471f21-bec7-46f8-8f75-a4afa882c296`)
+- `Task3 - Scalability and Capacity` (`f9552b2f-2bb7-43e4-bc7a-124421a1c63e`)
+- `Task3 - Traffic and Workload Health` (`6f3eb770-4a74-4ca2-aaae-f26cbc7ae44c`)
+
+### 9.2 Deployment Flow
+
+```bash
+./monitoring/deploy_dashboards.sh flash-aviary-488614-c1
+```
+
+What the script does:
+
+1. Reads each dashboard JSON and its `displayName`.
+2. Updates an existing dashboard with the same `displayName` (if present).
+3. Creates the dashboard from JSON if it does not already exist.
+
+### 9.3 Reliability/Scalability Focus Covered
+
+- Reliability:
+  - container restart behavior
+  - desired vs available deployment replicas (`frontend`, `paymentservice`)
+  - unschedulable pod pressure
+- Scalability/Capacity:
+  - CPU and memory request utilization
+  - node allocatable CPU/memory utilization
+- Workload traffic/health:
+  - pod network ingress/egress throughput
+  - container uptime trend
+
+### 9.4 Issue Encountered and Fix
+
+Issue: Monitoring API rejected filters using mixed `AND` + `(A OR B)` for resource labels.
+
+- Symptom:
+  - `INVALID_ARGUMENT ... AND and OR cannot be mixed for 'resource.label' restrictions`
+- Root cause:
+  - namespace filters were written as `(namespace="staging" OR namespace="production")`.
+- Fix:
+  - replaced with `resource.label.namespace_name=one_of("staging","production")` (and equivalent for `prometheus_target` namespace label).
