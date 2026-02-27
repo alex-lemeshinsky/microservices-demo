@@ -187,10 +187,10 @@ This satisfies the task requirement to remove provisioned cloud resources after 
 
 ### Remaining for full final submission package
 
-- [ ] Screenshots:
-  - [ ] deployed system in cloud
-  - [ ] CI/CD setup
-  - [ ] dashboards
+- [x] Screenshots:
+  - [x] deployed system in cloud
+  - [x] CI/CD setup
+  - [x] dashboards
 - [ ] Recorded end-to-end demo video with voice explanation
 
 ## 8. Task 2 - CI/CD for 2 Services (GitHub Actions)
@@ -314,3 +314,55 @@ Issue: Monitoring API rejected filters using mixed `AND` + `(A OR B)` for resour
   - namespace filters were written as `(namespace="staging" OR namespace="production")`.
 - Fix:
   - replaced with `resource.label.namespace_name=one_of("staging","production")` (and equivalent for `prometheus_target` namespace label).
+
+## 10. Screenshots Evidence
+
+### 10.1 Deployed System in Cloud
+
+GKE Cluster Overview (`online-boutique`, `us-central1-a`):
+
+![GKE Cluster Overview](docs/img/gke-cluster-overview.png)
+
+Namespaces and frontend services/IPs:
+
+![K8s Namespaces and Services](docs/img/k8s-namespaces-and-services.png)
+
+Staging frontend opened:
+
+![Staging Frontend](docs/img/staging-frontend-open.png)
+
+Production frontend opened:
+
+![Production Frontend](docs/img/production-frontend-open.png)
+
+### 10.2 CI/CD Setup and Runs
+
+GitHub Actions workflow page:
+
+![GitHub Actions Workflow](docs/img/github-actions-workflow-page.png)
+
+Successful staging deployment run:
+
+![GitHub Actions Staging Success](docs/img/github-actions-staging-success-run.png)
+
+Artifact Registry images/tags:
+
+![Artifact Registry Images](docs/img/artifact-registry-images.png)
+
+### 10.3 Monitoring Dashboards
+
+Dashboards list in Cloud Monitoring:
+
+![Monitoring Dashboards List](docs/img/monitoring-dashboards-list.png)
+
+Reliability dashboard:
+
+![Reliability Dashboard](docs/img/dashboard-reliability.png)
+
+Scalability dashboard:
+
+![Scalability Dashboard](docs/img/dashboard-scalability.png)
+
+Traffic and workload health dashboard:
+
+![Traffic and Health Dashboard](docs/img/dashboard-traffic-health.png)
