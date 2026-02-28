@@ -2,7 +2,20 @@
 
 ## Demo Video
 
-[Watch demo video](docs/vid/demo.mp4)
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=Ij7LguqK71Q">
+    <img src="https://img.youtube.com/vi/Ij7LguqK71Q/hqdefault.jpg" alt="Watch demo video on YouTube" width="900">
+  </a>
+</p>
+
+<p align="center">
+  <b>End-to-End DevOps Demo</b><br>
+  Terraform infrastructure • CI/CD for staging and production • Monitoring dashboards
+</p>
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=Ij7LguqK71Q"><b>▶ Watch on YouTube</b></a>
+</p>
 
 ## 1. Context
 
