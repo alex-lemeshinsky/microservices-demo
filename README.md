@@ -2,7 +2,7 @@
 
 ## Demo Video
 
-[Watch demo video](docs/vid/demo.mov)
+[Watch demo video](docs/vid/demo.mp4)
 
 ## 1. Context
 
