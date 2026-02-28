@@ -1,5 +1,9 @@
 # DevOps Test Task - GKE Deployment (Staging + Production)
 
+## Demo Video
+
+[Watch demo video](docs/vid/demo.mov)
+
 ## 1. Context
 
 This document describes the end-to-end flow used to deploy the Online Boutique microservices app to Google Kubernetes Engine (GKE) for the test task.
