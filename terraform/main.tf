@@ -25,6 +25,10 @@ locals {
   target_namespaces = length(var.environment_namespaces) > 0 ? var.environment_namespaces : [var.namespace]
 }
 
+data "google_project" "current" {
+  project_id = var.gcp_project_id
+}
+
 # Enable Google Cloud APIs
 module "enable_google_apis" {
   source  = "terraform-google-modules/project-factory/google//modules/project_services"
@@ -55,6 +59,12 @@ resource "google_container_cluster" "my_cluster" {
   depends_on = [
     module.enable_google_apis
   ]
+}
+
+resource "google_project_iam_member" "default_node_sa_role" {
+  project = var.gcp_project_id
+  role    = "roles/container.defaultNodeServiceAccount"
+  member  = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
 }
 
 resource "google_container_node_pool" "primary_nodes" {
